@@ -1167,6 +1167,7 @@ function ProfileSettings({ user, profile: initialProfile, onUpdate, onSignOut })
   const [editing, setEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [draft, setDraft] = useState({ name: '', email: '', phone: '', country: '' });
+  const navigate = useNavigate();
 
   // Sync draft when editing starts or profile changes
   useEffect(() => {
@@ -1304,13 +1305,14 @@ function ProfileSettings({ user, profile: initialProfile, onUpdate, onSignOut })
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mb-10">
         {[
-          { icon: Shield, label: lang === 'bn' ? 'গোপনীয়তা নীতি' : 'Privacy Policy', color: '#6366f1', desc: lang === 'bn' ? 'আমরা কীভাবে আপনার তথ্য ব্যবহার করি' : 'How we protect your data' },
-          { icon: FileText, label: lang === 'bn' ? 'শর্তাবলী' : 'Terms & Conditions', color: '#f59e0b', desc: lang === 'bn' ? 'আমাদের ব্যবহারের নির্দেশিকা' : 'Service rules & guidelines' },
+          { icon: Shield, label: lang === 'bn' ? 'গোপনীয়তা নীতি' : 'Privacy Policy', color: '#6366f1', desc: lang === 'bn' ? 'আমরা কীভাবে আপনার তথ্য ব্যবহার করি' : 'How we protect your data', path: '/privacy' },
+          { icon: FileText, label: lang === 'bn' ? 'শর্তাবলী' : 'Terms & Conditions', color: '#f59e0b', desc: lang === 'bn' ? 'আমাদের ব্যবহারের নির্দেশিকা' : 'Service rules & guidelines', path: '/terms' },
         ].map((item) => (
           <motion.button
             key={item.label}
             whileHover={{ y: -5 }}
             whileTap={{ scale: 0.98 }}
+            onClick={() => navigate(item.path)}
             className="group bg-white border border-slate-100 rounded-[32px] p-6 text-left shadow-sm hover:shadow-xl hover:shadow-primary-500/5 hover:border-primary-100 transition-all duration-300"
           >
             <div className="flex items-center justify-between mb-4">
