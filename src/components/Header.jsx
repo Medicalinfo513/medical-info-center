@@ -74,7 +74,7 @@ const Header = () => {
   ];
 
   return (
-    <header className="fixed w-full z-50 transition-all duration-300 shadow-sm">
+    <header className="fixed top-0 left-0 w-full z-50 transition-all duration-300 shadow-sm">
       {/* Top Bar */}
       <div className="bg-[#1e293b] text-white h-[34px] md:h-[32px] px-2 sm:px-4 flex items-center">
         <div className="container-custom flex justify-between items-center text-[13px] sm:text-[14px] font-medium w-full leading-none">

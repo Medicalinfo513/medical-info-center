@@ -6,6 +6,7 @@ import Header from '../components/Header';
 import { useLang } from '../context/LanguageContext';
 import { translations } from '../lib/translations';
 import Meta from '../components/Meta';
+import { HeroSkeleton } from '../components/Skeleton';
 
 const msmeImages = [
   '/certificates/msme/msme_page-0001.jpg',
@@ -69,6 +70,7 @@ const MsmeCarousel = ({ pageLabel }) => {
 const AboutPage = () => {
   const { lang } = useLang();
   const t = translations[lang].about;
+  const [heroLoaded, setHeroLoaded] = useState(false);
 
   const stats = [
     { value: "10k+", label: t.stats[0].label },
@@ -98,7 +100,8 @@ const AboutPage = () => {
       <main className="flex-grow pt-[93px] md:pt-[90px]">
 
         {/* Hero */}
-        <section className="relative py-16 md:py-24 overflow-hidden">
+        {!heroLoaded && <HeroSkeleton />}
+        <section className={`relative py-16 md:py-24 overflow-hidden ${heroLoaded ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
           {/* Background image */}
           <div className="absolute inset-x-0 top-0 bottom-0">
             <img 
@@ -109,6 +112,7 @@ const AboutPage = () => {
               height="600"
               loading="lazy"
               decoding="async"
+              onLoad={() => setHeroLoaded(true)}
               className="w-full h-full object-cover" 
             />
             <div className="absolute inset-0 bg-gradient-to-b from-secondary-900/70 via-secondary-900/60 to-secondary-900/80" />
@@ -120,7 +124,7 @@ const AboutPage = () => {
                 {t.heroBadge}
               </motion.p>
               <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                className="text-4xl md:text-6xl font-extrabold text-white leading-tight mb-8">
+                className="text-3xl md:text-6xl font-extrabold text-white leading-tight mb-6 px-2">
                 {t.heroTitle}
               </motion.h1>
               <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
@@ -138,12 +142,12 @@ const AboutPage = () => {
         {/* Stats */}
         <section className="py-16 bg-secondary-900">
           <div className="container-custom">
-            <div className="grid grid-cols-3 gap-8 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
               {stats.map((stat, i) => (
                 <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-                  <p className="text-4xl md:text-5xl font-extrabold text-primary-400 mb-2">{stat.value}</p>
-                  <p className="text-slate-400 font-medium text-sm">{stat.label}</p>
+                  <p className="text-4xl md:text-5xl font-extrabold text-primary-400 mb-1">{stat.value}</p>
+                  <p className="text-slate-400 font-medium text-xs md:text-sm">{stat.label}</p>
                 </motion.div>
               ))}
             </div>
@@ -163,7 +167,7 @@ const AboutPage = () => {
                   height="400"
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-[400px] object-cover rounded-[2rem] shadow-2xl" 
+                  className="w-full h-[280px] md:h-[400px] object-cover rounded-[2rem] shadow-2xl" 
                 />
               </motion.div>
               <motion.div initial={{ opacity: 0, x: 40 }} whileInView={{ opacity: 1, x: 0 }}
@@ -191,8 +195,8 @@ const AboutPage = () => {
           <div className="container-custom">
             <div className="text-center mb-14">
               <p className="text-primary-600 font-bold uppercase tracking-[0.2em] text-xs mb-4">{t.certBadge}</p>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-secondary-900 mb-4">{t.certTitle}</h2>
-              <p className="text-slate-500 max-w-xl mx-auto">{t.certDesc}</p>
+              <h2 className="text-2xl md:text-4xl font-extrabold text-secondary-900 mb-3">{t.certTitle}</h2>
+              <p className="text-sm md:text-base text-slate-500 max-w-xl mx-auto">{t.certDesc}</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">

@@ -5,6 +5,7 @@ import { Footer } from '../components/Footer';
 import Header from '../components/Header';
 import { useLang } from '../context/LanguageContext';
 import Meta from '../components/Meta';
+import { HeroSkeleton } from '../components/Skeleton';
 
 const content = {
   en: {
@@ -112,7 +113,7 @@ const content = {
 };
 
 const ServiceRow = ({ service }) => (
-  <div className={`flex flex-col ${service.reversed ? 'lg:flex-row-reverse' : 'lg:flex-row'} items-center gap-14 lg:gap-20 mb-28 last:mb-0`}>
+  <div className={`flex flex-col ${service.reversed ? 'lg:flex-row-reverse' : 'lg:flex-row'} items-center gap-10 lg:gap-20 mb-16 lg:mb-28 last:mb-0`}>
     {/* Image */}
     <motion.div
       initial={{ opacity: 0, x: service.reversed ? 50 : -50 }}
@@ -146,7 +147,7 @@ const ServiceRow = ({ service }) => (
         </div>
         <span className="text-primary-600 font-bold tracking-widest text-xs uppercase">{service.badge}</span>
       </div>
-      <h2 className="text-3xl md:text-4xl font-extrabold text-secondary-900 mb-5 leading-tight">
+      <h2 className="text-2xl md:text-4xl font-extrabold text-secondary-900 mb-4 leading-tight">
         {service.title}
       </h2>
       <p className="text-slate-500 leading-relaxed mb-8 text-[15px]">
@@ -167,6 +168,7 @@ const ServiceRow = ({ service }) => (
 const ServicesPage = () => {
   const { lang } = useLang();
   const c = content[lang];
+  const [heroLoaded, setHeroLoaded] = useState(false);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -178,7 +180,8 @@ const ServicesPage = () => {
       <main className="flex-grow pt-[93px] md:pt-[90px]">
 
         {/* Hero */}
-        <section className="relative py-28 md:py-40 overflow-hidden">
+        {!heroLoaded && <HeroSkeleton />}
+        <section className={`relative py-16 md:py-40 overflow-hidden ${heroLoaded ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
           {/* Background image */}
           <div className="absolute inset-x-0 top-0 bottom-0">
             <img 
@@ -189,6 +192,7 @@ const ServicesPage = () => {
               height="600"
               loading="lazy"
               decoding="async"
+              onLoad={() => setHeroLoaded(true)}
               className="w-full h-full object-cover" 
             />
             {/* Strong black overlay for text readability */}
@@ -207,7 +211,7 @@ const ServicesPage = () => {
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-              className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-white leading-[1.1] mb-8 tracking-tight"
+              className="text-3xl sm:text-6xl md:text-7xl font-extrabold text-white leading-[1.2] mb-6 tracking-tight px-4"
             >
               {c.title}
             </motion.h1>

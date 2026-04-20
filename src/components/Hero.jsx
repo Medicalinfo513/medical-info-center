@@ -4,13 +4,17 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useLang } from '../context/LanguageContext';
 import { translations } from '../lib/translations';
+import { HeroSkeleton } from './Skeleton';
 
 const Hero = () => {
   const { lang } = useLang();
   const t = translations[lang].hero;
+  const [imageLoaded, setImageLoaded] = React.useState(false);
 
   return (
-    <section className="relative h-[80vh] sm:h-[85vh] md:min-h-screen flex items-start md:items-center pt-32 sm:pt-40 md:pt-28 pb-10 md:pb-20 overflow-hidden rounded-b-[35px] md:rounded-b-[60px]">
+    <>
+    {!imageLoaded && <HeroSkeleton />}
+    <section className={`relative h-[80vh] sm:h-[85vh] md:min-h-screen flex items-start md:items-center pt-32 sm:pt-40 md:pt-28 pb-10 md:pb-20 overflow-hidden rounded-b-[35px] md:rounded-b-[60px] ${imageLoaded ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
       {/* Background Image */}
       <div className="absolute inset-x-0 top-0 bottom-0 z-0">
         <img 
@@ -21,6 +25,7 @@ const Hero = () => {
           decoding="async"
           width="1920"
           height="1080"
+          onLoad={() => setImageLoaded(true)}
           className="w-full h-full object-cover object-center" 
         />
         <div className="absolute inset-0 bg-gradient-to-r from-[#0f172a] via-[#0f172a]/80 to-[#0f172a]/30 md:from-[#0f172a] md:via-[#0f172a]/40 md:to-transparent backdrop-blur-[1px]" />
@@ -88,6 +93,7 @@ const Hero = () => {
       <div className="absolute bottom-0 right-0 w-1/3 h-1/3 bg-primary-500/10 blur-[120px] rounded-full"></div>
       <div className="absolute top-0 left-0 w-1/4 h-1/4 bg-primary-400/10 blur-[100px] rounded-full"></div>
     </section>
+    </>
   );
 };
 

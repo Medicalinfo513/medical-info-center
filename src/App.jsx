@@ -29,8 +29,14 @@ const SitemapPage = lazy(() => import('./pages/SitemapPage'));
 
 // Loading Fallback
 const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-[60vh]">
-    <div className="w-12 h-12 border-4 border-primary-100 border-t-primary-500 rounded-full animate-spin"></div>
+  <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+    <div className="relative">
+      <div className="w-16 h-16 border-4 border-primary-100 rounded-full border-t-primary-500 animate-spin"></div>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="w-8 h-8 bg-primary-500/10 rounded-full animate-pulse"></div>
+      </div>
+    </div>
+    <p className="mt-4 text-slate-400 font-medium animate-pulse">Loading Excellence...</p>
   </div>
 );
 
