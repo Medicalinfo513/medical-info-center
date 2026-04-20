@@ -148,7 +148,6 @@ export default function SignupPage() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
 
   const set = (key) => (e) => setForm(f => ({ ...f, [key]: e.target.value }));
 
@@ -174,13 +173,13 @@ export default function SignupPage() {
     });
     setLoading(false);
     if (err) { setError(err.message); return; }
-    setSuccess(true);
+    navigate('/appointment');
   };
 
   const handleGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: `${window.location.origin}/appointment` },
     });
   };
 
@@ -199,22 +198,6 @@ export default function SignupPage() {
         <h1 className="text-3xl font-extrabold text-secondary-900 mb-1">Create an account</h1>
         <p className="text-slate-500 mb-8 text-sm">Join us to easily book and manage your appointments</p>
 
-        {success ? (
-          <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-[420px] text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-bold text-secondary-900 mb-2">Check your email</h2>
-            <p className="text-slate-500 text-sm mb-6">
-              We sent a confirmation link to <strong>{form.email}</strong>. Please verify to activate your account.
-            </p>
-            <Link to="/login" className="inline-block bg-primary-500 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-primary-600 transition">
-              Back to Sign In
-            </Link>
-          </div>
-        ) : (
           <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-[440px]">
 
             {/* Google */}
@@ -321,7 +304,6 @@ export default function SignupPage() {
               Already have an account
             </Link>
           </div>
-        )}
       </main>
     </div>
   );

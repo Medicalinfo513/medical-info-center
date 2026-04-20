@@ -10,7 +10,7 @@ const Hero = () => {
   const t = translations[lang].hero;
 
   return (
-    <section className="relative h-[80vh] sm:h-[85vh] md:min-h-screen flex items-start md:items-center pt-40 sm:pt-40 md:pt-28 pb-20 overflow-hidden rounded-b-[35px] md:rounded-b-[60px]">
+    <section className="relative h-[80vh] sm:h-[85vh] md:min-h-screen flex items-start md:items-center pt-32 sm:pt-40 md:pt-28 pb-10 md:pb-20 overflow-hidden rounded-b-[35px] md:rounded-b-[60px]">
       {/* Background Image */}
       <div className="absolute inset-x-0 top-0 bottom-0 z-0">
         <img 
@@ -43,7 +43,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-[28px] sm:text-3xl md:text-5xl lg:text-6xl font-extrabold text-white leading-[1.2] mb-3 md:mb-6 tracking-tight"
+            className="text-[26px] sm:text-3xl md:text-5xl lg:text-6xl font-extrabold text-white leading-[1.2] mb-2 md:mb-6 tracking-tight"
           >
             {t.title1} <br className="hidden sm:block" />
             <span className="text-primary-400">{t.title2}</span>
@@ -62,7 +62,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="text-sm md:text-base text-slate-300 md:text-slate-400 mb-10 md:mb-10 leading-relaxed max-w-xl"
+            className="text-sm md:text-base text-slate-300 md:text-slate-400 mb-6 md:mb-10 leading-relaxed max-w-xl"
           >
             {t.description}
           </motion.p>
@@ -71,13 +71,13 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.6 }}
-            className="flex flex-col sm:flex-row items-center gap-5 sm:gap-4 w-full sm:w-auto"
+            className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto"
           >
-            <Link to="/contact" className="w-full sm:w-auto bg-primary-500 hover:bg-primary-600 text-white px-9 py-4 rounded-full font-bold text-[17px] transition-all shadow-xl shadow-primary-500/20 flex items-center justify-center gap-3">
+            <Link to="/contact" className="w-full sm:w-auto bg-primary-500 hover:bg-primary-600 text-white px-7 md:px-9 py-3.5 md:py-4 rounded-full font-bold text-base md:text-[17px] transition-all shadow-xl shadow-primary-500/20 flex items-center justify-center gap-3">
               {t.btnPrimary}
               <ArrowRight size={18} />
             </Link>
-            <Link to="/services" className="w-full sm:w-auto bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white px-9 py-4 rounded-full font-bold text-[17px] transition-all flex items-center justify-center">
+            <Link to="/services" className="w-full sm:w-auto bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white px-7 md:px-9 py-3.5 md:py-4 rounded-full font-bold text-base md:text-[17px] transition-all flex items-center justify-center">
               {t.btnSecondary}
             </Link>
           </motion.div>

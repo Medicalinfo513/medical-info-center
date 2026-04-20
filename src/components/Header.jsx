@@ -154,11 +154,8 @@ const Header = () => {
                 </>
               ) : (
                 <>
-                  <Link to="/login" className="px-6 py-2 rounded-full font-bold text-[16px] text-secondary-900 border border-slate-200 hover:bg-slate-50 transition-all h-[42px] flex items-center justify-center">
-                    {t.login}
-                  </Link>
-                  <Link to="/signup" className="bg-[#1e293b] hover:bg-black text-white px-6 py-2 rounded-full font-bold text-[16px] transition-all shadow-md h-[42px] flex items-center justify-center">
-                    {t.signup}
+                  <Link to="/appointment" className="bg-[#1e293b] hover:bg-black text-white px-6 py-2 rounded-full font-bold text-[16px] transition-all shadow-md h-[42px] flex items-center justify-center">
+                    {t.appointment}
                   </Link>
                 </>
               )}
@@ -210,13 +207,10 @@ const Header = () => {
               </>
             ) : (
               <>
-                <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}
-                  className="mt-4 w-full border-2 border-slate-200 text-secondary-900 py-4 rounded-xl font-bold text-lg text-center">
-                  {t.login}
-                </Link>
-                <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-full bg-[#1e293b] text-white py-4 rounded-xl font-bold text-lg text-center">
-                  {t.signup}
+                <Link to="/appointment" onClick={() => setIsMobileMenuOpen(false)}
+                  className="mt-4 w-full bg-[#1e293b] text-white py-4 rounded-xl font-bold text-lg text-center flex items-center justify-center gap-2">
+                  <CalendarClock size={20} />
+                  {t.appointment}
                 </Link>
               </>
             )}
