@@ -1,40 +1,22 @@
-# https://www.robotstxt.org/robotstxt.html
-
-# Let world know this is a professional site
 User-agent: *
 Allow: /
-# Disallow sensitive system and auth paths
 Disallow: /admin
 Disallow: /login
 Disallow: /signup
 Disallow: /api/
-Disallow: /private/
-Disallow: /config/
+# Prevent indexing of sensitive system files
+Disallow: /*.php$
+Disallow: /*.sql$
+Disallow: /*.env$
+Disallow: /node_modules/
+Disallow: /src/
 
-# Social Media bots and specialized crawlers
+# Professional Crawlers
 User-agent: Googlebot
 Allow: /
 
 User-agent: Bingbot
 Allow: /
 
-User-agent: Baiduspider
-Disallow: /
-
-User-agent: Yandex
-Disallow: /
-
-# Prevent indexing of specific file types often used in development
-Disallow: /*.php$
-Disallow: /*.sql$
-Disallow: /*.env$
-Disallow: /*.json$
-Disallow: /node_modules/
-Disallow: /src/
-
-# Crawl-delay for polite scraping (optional but good for stability)
-Crawl-delay: 10
-
-# Host and Sitemap
-Sitemap: https://medicalinformationcenter.com/sitemap.xml
-Host: https://medicalinformationcenter.com
+# Sitemap Location
+Sitemap: https://medicalinfocentre.com/sitemap.xml
