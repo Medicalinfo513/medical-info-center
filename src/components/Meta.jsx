@@ -9,7 +9,7 @@ const Meta = ({
   schema = null 
 }) => {
   const location = useLocation();
-  const url = `https://medicalinformationcenter.com${location.pathname}`;
+  const url = `https://medicalinfocentre.com${location.pathname}`;
   const siteName = "Medical Information Center";
   const finalTitle = title ? `${title} | ${siteName}` : siteName;
 
@@ -32,7 +32,7 @@ const Meta = ({
       'og:description': description,
       'og:url': url,
       'og:type': type,
-      'og:image': `https://medicalinformationcenter.com${image}`,
+      'og:image': `https://medicalinfocentre.com${image}`,
       'og:site_name': siteName,
     };
 
@@ -51,7 +51,7 @@ const Meta = ({
       'twitter:card': 'summary_large_image',
       'twitter:title': finalTitle,
       'twitter:description': description,
-      'twitter:image': `https://medicalinformationcenter.com${image}`,
+      'twitter:image': `https://medicalinfocentre.com${image}`,
     };
 
     Object.entries(twitterTags).forEach(([name, content]) => {

@@ -70,14 +70,14 @@ const HomePage = () => {
           "@type": "MedicalWebPage",
           "name": "Medical Information Center",
           "description": "Premium medical facilitation and assistance service for international patients seeking world-class treatment in India.",
-          "url": "https://medicalinformationcenter.com",
+          "url": "https://medicalinfocentre.com",
           "medicalSpecialty": ["Oncology", "Cardiology", "Orthopedics", "Transplant"],
           "audience": "International Patients",
           "mainEntity": {
             "@type": "Organization",
             "name": "Medical Information Center",
-            "url": "https://medicalinformationcenter.com",
-            "logo": "https://medicalinformationcenter.com/images/logo-mic.png",
+            "url": "https://medicalinfocentre.com",
+            "logo": "https://medicalinfocentre.com/images/logo-mic.png",
             "contactPoint": {
               "@type": "ContactPoint",
               "telephone": phone,
