@@ -18,27 +18,11 @@ CREATE TABLE IF NOT EXISTS branches (
   created_at timestamp with time zone DEFAULT now()
 );
 
--- 3. Create Doctors Table
-CREATE TABLE IF NOT EXISTS doctors (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  branch_id uuid REFERENCES branches(id),
-  department text,
-  doctor_name text,
-  specialization text,
-  experience text,
-  qualification text,
-  consultation_fee numeric,
-  available_days text[],
-  image_url text,
-  created_at timestamp with time zone DEFAULT now()
-);
-
--- 4. Create Appointments Table
+-- 3. Create Appointments Table
 CREATE TABLE IF NOT EXISTS appointments (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   booking_id text UNIQUE,
   user_id uuid REFERENCES users(id),
-  doctor_id uuid REFERENCES doctors(id),
   branch_id uuid REFERENCES branches(id),
   department text,
   full_name text,

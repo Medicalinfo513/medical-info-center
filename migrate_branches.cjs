@@ -34,7 +34,6 @@ async function runSQL(label, sql) {
 
 async function main() {
   await runSQL('Disable RLS on branches', `ALTER TABLE branches DISABLE ROW LEVEL SECURITY;`);
-  await runSQL('Disable RLS on doctors', `ALTER TABLE doctors DISABLE ROW LEVEL SECURITY;`);
   await runSQL('Disable RLS on appointments', `ALTER TABLE appointments DISABLE ROW LEVEL SECURITY;`);
   await runSQL('Disable RLS on users', `ALTER TABLE users DISABLE ROW LEVEL SECURITY;`);
   console.log('\n✅ All RLS disabled for admin operations.');
