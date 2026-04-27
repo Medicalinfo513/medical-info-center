@@ -4,7 +4,7 @@ import {
   CalendarPlus, History, Settings, Search, MapPin, ArrowRight,
   Clock, ChevronRight, ChevronLeft, ChevronDown, Phone, Globe, Shield, FileText, Pencil,
   Building2, Stethoscope, UserCheck, ClipboardList, CreditCard,
-  CheckCircle2, Star, Pill, HeartPulse, LogOut, User,
+  CheckCircle2, Star, Pill, HeartPulse, LogOut, User, Plus, X,
   UserCircle2, LayoutDashboard, Heart, Brain, Bone, Activity, Baby, Eye, Users,
   Sparkles, ShieldCheck, Microscope, Syringe, Scissors, Droplets, Smile, Waves, HeartPulse as HeartPulseIcon,
   Bandage, Dna, Hospital, Thermometer, BriefcaseMedical
@@ -64,8 +64,6 @@ const TRANSLATIONS = {
     },
     steps: {
       branch: "Branch",
-      specialty: "Specialty",
-      doctor: "Doctor",
       form: "Form",
       pay: "Pay"
     },
@@ -112,7 +110,10 @@ const TRANSLATIONS = {
       preferredDate: "Preferred Date",
       email: "Email Address",
       emailPlaceholder: "e.g. name@example.com",
-      button: "Pay Advance"
+      button: "Pay Advance Fee",
+      citizenship: "Citizenship Status",
+      indian: "Indian Citizen",
+      foreign: "Foreign Citizen"
     }
   },
   bn: {
@@ -125,8 +126,6 @@ const TRANSLATIONS = {
     },
     steps: {
       branch: "শাখা",
-      specialty: "বিশেষত্ব",
-      doctor: "ডাক্তার",
       form: "ফরম",
       pay: "পেমেন্ট"
     },
@@ -173,7 +172,10 @@ const TRANSLATIONS = {
       preferredDate: "পছন্দের তারিখ",
       email: "ইমেল ঠিকানা",
       emailPlaceholder: "যেমন: name@example.com",
-      button: "অগ্রিম পেমেন্ট করুন"
+      button: "অগ্রিম পেমেন্ট করুন",
+      citizenship: "নাগরিকত্ব স্ট্যাটাস",
+      indian: "ভারতীয় নাগরিক",
+      foreign: "বিদেশী নাগরিক"
     }
   }
 };
@@ -195,10 +197,8 @@ const ICON_MAP = {
 ══════════════════════════════════════════════════════════ */
 const STEPS = [
   { id: 1, label: 'Branch', icon: Building2 },
-  { id: 2, label: 'Specialty', icon: Stethoscope },
-  { id: 3, label: 'Doctor', icon: UserCheck },
-  { id: 4, label: 'Form', icon: ClipboardList },
-  { id: 5, label: 'Pay', icon: CreditCard },
+  { id: 2, label: 'Form', icon: ClipboardList },
+  { id: 3, label: 'Pay', icon: CreditCard },
 ];
 
 function Stepper({ current }) {
@@ -206,10 +206,8 @@ function Stepper({ current }) {
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
   const currentSteps = [
     { id: 1, label: t.steps.branch, icon: Building2 },
-    { id: 2, label: t.steps.specialty, icon: Stethoscope },
-    { id: 3, label: t.steps.doctor, icon: UserCheck },
-    { id: 4, label: t.steps.form, icon: ClipboardList },
-    { id: 5, label: t.steps.pay, icon: CreditCard },
+    { id: 2, label: t.steps.form, icon: ClipboardList },
+    { id: 3, label: t.steps.pay, icon: CreditCard },
   ];
 
   return (
@@ -251,7 +249,22 @@ function BookAppointment({ onComplete, user, profile }) {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState({ hospital: null, specialty: null, doctor: null });
   const [form, setForm] = useState({ name: '', email: '', date: '', country: '', phone: '', concern: '', city: '' });
+  const [foreignForm, setForeignForm] = useState({
+    surname: '', givenName: '', gender: '', dob: '', nationality: '', 
+    passportNo: '', passportIssueDate: '', passportExpireDate: '', nidNo: '',
+    addressNative: '', addressIndia: '', state: '', cityDistrict: '', pinCode: '',
+    contactNative: '', contactIndia: '', email: '',
+    treatment: {
+      diagnosis: '', durationHospital: '', stayDuration: '', doctorName: ''
+    },
+    attendants: [
+      { surname: '', givenName: '', gender: '', dob: '', nationality: '', passportNo: '', passportIssueDate: '', passportExpireDate: '', nidNo: '', addressNative: '', addressIndia: '', state: '', cityDistrict: '', pinCode: '', contactNative: '', contactIndia: '', email: '', relationship: '' },
+      { surname: '', givenName: '', gender: '', dob: '', nationality: '', passportNo: '', passportIssueDate: '', passportExpireDate: '', nidNo: '', addressNative: '', addressIndia: '', state: '', cityDistrict: '', pinCode: '', contactNative: '', contactIndia: '', email: '', relationship: '' },
+      { surname: '', givenName: '', gender: '', dob: '', nationality: '', passportNo: '', passportIssueDate: '', passportExpireDate: '', nidNo: '', addressNative: '', addressIndia: '', state: '', cityDistrict: '', pinCode: '', contactNative: '', contactIndia: '', email: '', relationship: '' }
+    ]
+  });
   const [billingType, setBillingType] = useState('domestic'); // 'domestic' or 'international'
+  const [attendantCount, setAttendantCount] = useState(1);
   const [booked, setBooked] = useState(false);
   const [loadingPayment, setLoadingPayment] = useState(false);
   
@@ -330,18 +343,19 @@ function BookAppointment({ onComplete, user, profile }) {
         .insert({
           booking_id: bookingId,
           user_id: user?.id,
-          full_name: form.name,
-          country: form.country,
-          phone: form.phone,
-          medical_concern: form.concern,
+          full_name: billingType === 'domestic' ? form.name : `${foreignForm.givenName} ${foreignForm.surname}`,
+          country: billingType === 'domestic' ? 'India' : foreignForm.nationality,
+          phone: billingType === 'domestic' ? form.phone : foreignForm.contactNative,
+          medical_concern: billingType === 'domestic' ? form.concern : foreignForm.treatment.diagnosis,
           preferred_date: form.date,
-          email: form.email,
-          department: selected.specialty?.name || form.concern,
+          email: billingType === 'domestic' ? form.email : foreignForm.email,
+          department: form.concern,
           payment_status: 'Paid',
           booking_status: 'Pending',
           advance_paid: billingType === 'domestic' ? fees.domestic : fees.international,
           branch_id: selected.hospital?.id,
-          doctor_id: selected.doctor?.id,
+          doctor_id: null,
+          metadata: billingType === 'international' ? foreignForm : null
         });
 
       if (error) {
@@ -434,15 +448,11 @@ function BookAppointment({ onComplete, user, profile }) {
         </AnimatePresence>
         <h1 className="text-3xl font-extrabold text-slate-900 mb-1">
           {step === 1 && t.step1.title}
-          {step === 2 && t.step2.title}
-          {step === 3 && t.step3.title}
-          {step === 4 && t.step4.title}
+          {step === 2 && t.step4.title}
         </h1>
         <p className="text-slate-400 text-sm">
           {step === 1 && t.step1.desc}
-          {step === 2 && t.step2.desc}
-          {step === 3 && t.step3.desc}
-          {step === 4 && t.step4.desc}
+          {step === 2 && t.step4.desc}
         </p>
       </div>
 
@@ -521,288 +531,311 @@ function BookAppointment({ onComplete, user, profile }) {
           </motion.div>
         )}
 
-        {/* ── Step 2: Specialty ── */}
+
+
+        {/* ── Step 2: Form ── */}
         {step === 2 && (
-          <motion.div key="s2" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.22 }}>
-            <h2 className="text-2xl font-extrabold text-slate-900 mb-1">Select Department</h2>
-            <p className="text-sm text-slate-400 mb-5">Browse medical specialties at this branch.</p>
-            <div className="relative mb-6">
-              <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input value={search} onChange={e => setSearch(e.target.value)}
-                placeholder={t.step2.placeholder}
-                className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-primary-300 transition shadow-sm" />
-            </div>
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-5 xl:gap-7">
-              {filteredSpecialties.map(sp => {
-                let finalIconName = sp.icon_name;
-                let finalColor = sp.color;
-                
-                if (!finalIconName || !finalColor) {
-                  const name = (sp.name || '').toLowerCase();
-                  const mapping = [
-                    { keywords: ['cardio', 'heart'], icon: 'Heart', color: '#ef4444' },
-                    { keywords: ['neuro', 'brain', 'nerve'], icon: 'Brain', color: '#8b5cf6' },
-                    { keywords: ['ortho', 'bone', 'joint'], icon: 'Bone', color: '#f97316' },
-                    { keywords: ['derm', 'skin', 'beauty'], icon: 'Sparkles', color: '#ec4899' },
-                    { keywords: ['pedia', 'child', 'baby'], icon: 'Baby', color: '#10b981' },
-                    { keywords: ['eye', 'ophth', 'vision'], icon: 'Eye', color: '#06b6d4' },
-                    { keywords: ['dent', 'teeth', 'smile', 'oral'], icon: 'Smile', color: '#3b82f6' },
-                    { keywords: ['phar', 'medicine', 'drug'], icon: 'Pill', color: '#14b8a6' },
-                    { keywords: ['surg', 'operat'], icon: 'Scissors', color: '#f43f5e' },
-                    { keywords: ['urol', 'kidney', 'nephro', 'fluid'], icon: 'Droplets', color: '#3b82f6' },
-                    { keywords: ['general', 'checkup', 'wellness'], icon: 'ShieldCheck', color: '#6366f1' },
-                    { keywords: ['gast', 'stomach', 'digest'], icon: 'Activity', color: '#f59e0b' },
-                    { keywords: ['patho', 'lab', 'blood', 'dna'], icon: 'Dna', color: '#ef4444' },
-                    { keywords: ['emergency', 'trauma'], icon: 'Hospital', color: '#dc2626' },
-                    { keywords: ['fever', 'infect'], icon: 'Thermometer', color: '#f97316' },
-                    { keywords: ['wound', 'burn'], icon: 'Bandage', color: '#f59e0b' }
-                  ];
-
-                  const matched = mapping.find(m => m.keywords.some(k => name.includes(k)));
-                  
-                  if (matched) {
-                    if (!finalIconName) finalIconName = matched.icon;
-                    if (!finalColor) finalColor = matched.color;
-                  } else {
-                    const fallbacks = ['BriefcaseMedical', 'Stethoscope', 'Microscope', 'Syringe', 'Waves'];
-                    const colors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#6366f1'];
-                    let hash = 0;
-                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-                    hash = Math.abs(hash);
-                    if (!finalIconName) finalIconName = fallbacks[hash % fallbacks.length];
-                    if (!finalColor) finalColor = colors[hash % colors.length];
-                  }
-                }
-                
-                const Icon = ICON_MAP[finalIconName] || Activity;
-                const isSelected = selected.specialty?.id === sp.id;
-                
-                return (
-                  <motion.button key={sp.id}
-                    whileHover={{ y: -8, boxShadow: '0 25px 50px -12px rgba(0,0,0,0.08)' }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => goToNextStep({ specialty: sp })}
-                    className="group relative flex flex-col items-center bg-white border border-slate-50 rounded-[32px] pt-8 pb-7 px-5 transition-all duration-300 shadow-sm hover:border-primary-100">
-
-                    {/* Image / Icon Container */}
-                    <div className="w-[68px] h-[68px] rounded-[24px] flex items-center justify-center mb-5 transition-all duration-500 group-hover:rotate-6 group-hover:scale-110 overflow-hidden"
-                      style={!sp.image_url ? { backgroundColor: finalColor + '12' } : {}}>
-                      {sp.image_url ? (
-                         <img src={sp.image_url} alt={sp.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                      ) : (
-                         <Icon size={28} style={{ color: finalColor }} strokeWidth={2.2} />
-                      )}
-                    </div>
-
-                    {/* Text content */}
-                    <h3 className="text-[16px] font-extrabold text-slate-900 mb-1 leading-tight text-center">{sp.name}</h3>
-                    <p className="text-[11px] font-bold text-slate-400 mb-6 tracking-wide text-center">{sp.subtitle}</p>
-
-                    {/* Bottom arrow circle */}
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 border
-                      ${isSelected
-                        ? 'bg-primary-500 border-primary-500 shadow-lg shadow-primary-500/40 translate-y-1'
-                        : 'bg-slate-50 border-slate-100 group-hover:bg-primary-500 group-hover:border-primary-500 group-hover:shadow-lg group-hover:shadow-primary-500/30 group-hover:translate-y-1'}`}>
-                      <ChevronRight size={16} className={isSelected ? 'text-white' : 'text-slate-300 group-hover:text-white'} strokeWidth={3} />
-                    </div>
-                  </motion.button>
-                );
-              })}
-            </div>
-          </motion.div>
-        )}
-
-        {/* ── Step 3: Doctor ── */}
-        {step === 3 && (
-          <motion.div key="s3" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.22 }}>
-            <h2 className="text-2xl font-extrabold text-slate-900 mb-1">Pick a Doctor</h2>
-            <p className="text-sm text-slate-400 mb-5">Select your preferred specialist.</p>
-            <div className="relative mb-6">
-              <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input value={search} onChange={e => setSearch(e.target.value)}
-                placeholder={t.step3.placeholder}
-                className="w-full pl-11 pr-4 py-3 rounded-2xl border border-slate-200 bg-white text-sm outline-none focus:ring-2 focus:ring-primary-300 transition shadow-sm" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filteredDoctors.length > 0 ? (
-                filteredDoctors.map(doc => (
-                  <motion.div key={doc.id}
-                    whileHover={doc.is_active ? { x: 6, boxShadow: '8px 8px 30px rgba(0,0,0,0.04)' } : {}}
-                    onClick={() => {
-                      if (!doc.is_active) return;
-                      goToNextStep({ doctor: doc });
-                    }}
-                    className={`bg-white border rounded-2xl p-3.5 transition-all group flex items-center gap-4 shadow-sm
-                      ${doc.is_active ? 'border-slate-100 cursor-pointer hover:border-primary-100' : 'border-slate-100 opacity-60 cursor-not-allowed grayscale-[0.5]'}`}>
-
-                    {/* Avatar Section */}
-                    <div className="relative flex-shrink-0">
-                      {doc.image_url ? (
-                        <img src={doc.image_url} alt={doc.doctor_name} className={`w-16 h-16 rounded-[14px] object-cover ring-2 ring-slate-50 ring-offset-1 transition-transform ${doc.is_active ? 'group-hover:scale-105' : ''}`} />
-                      ) : (
-                        <div className="w-16 h-16 rounded-[14px] bg-slate-50 flex items-center justify-center ring-2 ring-slate-50 ring-offset-1">
-                          <User size={26} className="text-slate-200" />
-                        </div>
-                      )}
-                      {/* Status indicator */}
-                      <div className={`absolute -top-1 -right-1 w-3.5 h-3.5 border-2 border-white rounded-full shadow-sm ${doc.is_active ? 'bg-emerald-500' : 'bg-slate-300'}`} />
-                    </div>
-
-                    {/* Main Content Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-extrabold text-slate-900 text-[15px] group-hover:text-primary-600 transition-colors truncate">{doc.doctor_name}</h4>
-                        <div className={`flex items-center bg-primary-50 px-2 py-0.5 rounded-full ${doc.is_active ? 'bg-emerald-50' : 'bg-slate-100'}`}>
-                          <span className={`text-[9px] font-bold uppercase tracking-tighter ${doc.is_active ? 'text-emerald-600' : 'text-slate-500'}`}>
-                            {doc.is_active ? t.step3.available : t.step3.unavailable}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <Stethoscope size={11} className="text-primary-400 flex-shrink-0" />
-                          <span className="text-[11px] font-bold text-slate-500 truncate">
-                            {(() => {
-                              const specs = (doc.specialization || '').split(',').map(s => s.trim()).filter(Boolean);
-                              if (specs.length <= 2) return doc.specialization;
-                              return `${specs.slice(0, 2).join(', ')} +${specs.length - 2}`;
-                            })()}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <MapPin size={11} className="text-orange-400 flex-shrink-0" />
-                          <span className="text-[11px] font-bold text-slate-500 truncate">{doc.branches?.city || 'Facility'}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Navigation Arrow */}
-                    <div className="w-9 h-9 rounded-xl bg-slate-50 group-hover:bg-primary-500 flex items-center justify-center transition-all shadow-sm">
-                      <ChevronRight size={15} className="text-slate-300 group-hover:text-white group-hover:translate-x-0.5 transition-transform" />
-                    </div>
-                  </motion.div>
-                ))
-              ) : (
-                <div className="col-span-full py-16 flex flex-col items-center justify-center bg-slate-50/50 border border-dashed border-slate-200 rounded-[40px] text-center">
-                  <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mb-6 text-slate-300 border border-slate-100">
-                    <BriefcaseMedical size={32} />
-                  </div>
-                  <h3 className="text-xl font-black text-slate-800 tracking-tight">No Specialists Found</h3>
-                  <p className="text-sm text-slate-500 max-w-[280px] mt-2 leading-relaxed">We couldn't find any doctors matching your current combination of branch and department.</p>
-                  <button onClick={() => setStep(2)} className="mt-6 px-6 py-2.5 bg-white border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest text-primary-500 hover:bg-primary-50 hover:border-primary-200 transition-all">
-                    Change Department
-                  </button>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-
-        {/* ── Step 4: Form ── */}
-        {step === 4 && (
-          <motion.div key="s4" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.22 }} className="flex flex-col items-center">
+          <motion.div key="s4" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.22 }} className="flex flex-col items-center w-full">
             <h2 className="text-2xl font-extrabold text-slate-900 mb-1 text-center">{t.step4.title}</h2>
             <p className="text-sm text-slate-400 mb-8 text-center">{t.step4.desc}</p>
-
-            <form onSubmit={e => { e.preventDefault(); setStep(5); }} className="space-y-8 max-w-2xl w-full mx-auto">
-
-              {/* Patient Information */}
-              <div className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm">
+            <form onSubmit={e => { e.preventDefault(); setStep(3); }} className="space-y-8 max-w-4xl w-full mx-auto">
+              
+              {/* Citizenship Selection (Always visible at top of form) */}
+              <div className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm mb-8">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
-                    <User size={18} className="text-primary-500" />
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-800">{t.step4.patientInfo}</h3>
+                   <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
+                     <ShieldCheck size={18} className="text-primary-500" />
+                   </div>
+                   <h3 className="text-lg font-bold text-slate-800">{t.step4.citizenship}</h3>
                 </div>
+                <div className="p-1 bg-slate-100 rounded-2xl flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBillingType('domestic');
+                      setForm(v => ({ ...v, country: 'India' }));
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black transition-all
+                      ${billingType === 'domestic' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    <div className={`w-2 h-2 rounded-full ${billingType === 'domestic' ? 'bg-primary-500' : 'bg-slate-300'}`} />
+                    {t.step4.indian}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBillingType('international');
+                      if (form.country === 'India') setForm(v => ({ ...v, country: '' }));
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black transition-all
+                      ${billingType === 'international' ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  >
+                    <div className={`w-2 h-2 rounded-full ${billingType === 'international' ? 'bg-primary-500' : 'bg-slate-300'}`} />
+                    {t.step4.foreign}
+                  </button>
+                </div>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{t.step4.fullName}</label>
-                    <input type="text" required value={form.name}
-                      onChange={e => setForm(v => ({ ...v, name: e.target.value }))}
-                      placeholder="e.g. Aman Das"
-                      className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition" />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{t.step4.country}</label>
-                    <div className="relative">
-                      <select required value={form.country || ''}
-                        onChange={e => {
-                          const val = e.target.value;
-                          const selectedCountry = COUNTRY_DATA.find(c => c.name === val);
-                          setForm(v => ({
-                            ...v,
-                            country: val,
-                            phone: selectedCountry?.code ? (v.phone.startsWith('+') ? selectedCountry.code + ' ' + v.phone.split(' ').slice(1).join(' ') : selectedCountry.code + ' ') : v.phone
-                          }));
-                        }}
-                        className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition appearance-none cursor-pointer">
-                        <option value="" disabled>{lang === 'bn' ? 'দেশ নির্বাচন করুন' : 'Select Country'}</option>
-                        {COUNTRY_DATA.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-                      </select>
-                      <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              {billingType === 'domestic' ? (
+                <>
+                  {/* Indian Citizen Form (Original Simple Version) */}
+                  <div className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center">
+                        <User size={18} className="text-primary-500" />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-800">{t.step4.patientInfo}</h3>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{t.step4.fullName}</label>
+                        <input type="text" required value={form.name}
+                          onChange={e => setForm(v => ({ ...v, name: e.target.value }))}
+                          placeholder="e.g. Aman Das"
+                          className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{t.step4.country}</label>
+                        <div className="relative">
+                          <input type="text" disabled value="India" className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-100/50 text-slate-500 text-sm outline-none cursor-not-allowed" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{t.step4.phone}</label>
+                        <input type="tel" required value={form.phone || ''}
+                          onChange={e => setForm(v => ({ ...v, phone: e.target.value }))}
+                          placeholder="+91 XXXXX XXXXX"
+                          className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{t.step4.concern}</label>
+                        <input type="text" required disabled value={form.concern || ''}
+                          className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-100/50 text-slate-500 text-sm outline-none cursor-not-allowed" />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{t.step4.email}</label>
+                        <input type="email" required value={form.email || ''}
+                          onChange={e => setForm(v => ({ ...v, email: e.target.value }))}
+                          placeholder={t.step4.emailPlaceholder}
+                          className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition" />
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{t.step4.phone}</label>
-                    <input type="tel" required value={form.phone || ''}
-                      onChange={e => setForm(v => ({ ...v, phone: e.target.value }))}
-                      placeholder="+91 XXXXX XXXXX"
-                      className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition" />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{t.step4.concern}</label>
-                    <input type="text" required disabled value={form.concern || ''}
-                      className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-100/50 text-slate-500 text-sm outline-none cursor-not-allowed" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{t.step4.email}</label>
-                    <input type="email" required value={form.email || ''}
-                      onChange={e => setForm(v => ({ ...v, email: e.target.value }))}
-                      placeholder={t.step4.emailPlaceholder}
-                      className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition" />
-                  </div>
-                </div>
-              </div>
 
-              {/* Appointment Details */}
-              <div className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
-                    <CalendarPlus size={18} className="text-orange-500" />
+                  <div className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+                        <CalendarPlus size={18} className="text-orange-500" />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-800">{t.step4.appDetails}</h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{t.step4.preferredCity}</label>
+                        <input type="text" required disabled value={form.city || ''}
+                          className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-100/50 text-slate-500 text-sm outline-none cursor-not-allowed" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{t.step4.preferredDate}</label>
+                        <input type="date" required value={form.date}
+                          onChange={e => setForm(v => ({ ...v, date: e.target.value }))}
+                          className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition" />
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-800">{t.step4.appDetails}</h3>
-                </div>
+                </>
+              ) : (
+                <>
+                  {/* Foreign Citizen Form (Extensive Version) */}
+                  <div className="bg-white border border-slate-100 rounded-[32px] p-8 shadow-sm space-y-12">
+                    
+                    {/* 1. Details of Patient */}
+                    <section>
+                      <div className="flex items-center gap-3 mb-8 border-b border-slate-50 pb-4">
+                        <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary-500"><User size={20} /></div>
+                        <h3 className="text-xl font-black text-slate-800 tracking-tight">Details of Patient</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {['surname', 'givenName', 'gender', 'dob', 'nationality', 'passportNo', 'passportIssueDate', 'passportExpireDate', 'nidNo'].map(field => (
+                          <div key={field} className={field === 'addressNative' || field === 'addressIndia' ? 'md:col-span-3' : ''}>
+                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">{field.replace(/([A-Z])/g, ' $1').trim()}</label>
+                             <input 
+                               type={field.includes('Date') || field === 'dob' ? 'date' : 'text'}
+                               required
+                               value={foreignForm[field] || ''}
+                               onChange={e => setForeignForm(f => ({ ...f, [field]: e.target.value }))}
+                               className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/30 text-sm font-bold outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition"
+                             />
+                          </div>
+                        ))}
+                        <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+                           {['addressNative', 'addressIndia'].map(field => (
+                             <div key={field}>
+                               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">{field.replace(/([A-Z])/g, ' $1').trim()}</label>
+                               <textarea 
+                                 required rows={2}
+                                 value={foreignForm[field] || ''}
+                                 onChange={e => setForeignForm(f => ({ ...f, [field]: e.target.value }))}
+                                 className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/30 text-sm font-bold outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition resize-none"
+                               />
+                             </div>
+                           ))}
+                        </div>
+                        {['state', 'cityDistrict', 'pinCode', 'contactNative', 'contactIndia', 'email'].map(field => (
+                          <div key={field}>
+                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">{field.replace(/([A-Z])/g, ' $1').trim()}</label>
+                             <input 
+                               type={field === 'email' ? 'email' : 'text'}
+                               required
+                               value={foreignForm[field] || ''}
+                               onChange={e => setForeignForm(f => ({ ...f, [field]: e.target.value }))}
+                               className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/30 text-sm font-bold outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition"
+                             />
+                          </div>
+                        ))}
+                      </div>
+                    </section>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{t.step4.preferredCity}</label>
-                    <input type="text" required disabled value={form.city || ''}
-                      className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-100/50 text-slate-500 text-sm outline-none cursor-not-allowed" />
+                    {/* 2. Details of Treatment */}
+                    <section>
+                      <div className="flex items-center gap-3 mb-8 border-b border-slate-50 pb-4">
+                        <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500"><Activity size={20} /></div>
+                        <h3 className="text-xl font-black text-slate-800 tracking-tight">Details of Treatment</h3>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="md:col-span-2">
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Hospital / Branch Name</label>
+                           <input type="text" disabled value={selected.hospital?.branch_name || ''} className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-100/50 text-slate-500 text-sm font-bold cursor-not-allowed" />
+                        </div>
+                        <div className="md:col-span-2">
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Diagnosis/Proposed Treatment</label>
+                           <input type="text" required value={foreignForm.treatment.diagnosis} onChange={e => setForeignForm(f => ({ ...f, treatment: { ...f.treatment, diagnosis: e.target.value } }))} className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/30 text-sm font-bold outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition" />
+                        </div>
+                        <div>
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Department Name</label>
+                           <input type="text" disabled value={form.concern || ''} className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-100/50 text-slate-500 text-sm font-bold cursor-not-allowed" />
+                        </div>
+                        <div>
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Date of appointment request</label>
+                           <input type="text" disabled value={new Date().toLocaleDateString()} className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-100/50 text-slate-500 text-sm font-bold cursor-not-allowed" />
+                        </div>
+                        <div>
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Appointment Date with Doctor</label>
+                           <input type="date" required value={form.date} onChange={e => setForm(v => ({ ...v, date: e.target.value }))} className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/30 text-sm font-bold outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition" />
+                        </div>
+                        <div>
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Name of Doctor</label>
+                           <input type="text" value={foreignForm.treatment.doctorName} onChange={e => setForeignForm(f => ({ ...f, treatment: { ...f.treatment, doctorName: e.target.value } }))} className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/30 text-sm font-bold outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition" placeholder="Optional" />
+                        </div>
+                        <div>
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Duration of Treatment (days)</label>
+                           <input type="number" required value={foreignForm.treatment.durationHospital} onChange={e => setForeignForm(f => ({ ...f, treatment: { ...f.treatment, durationHospital: e.target.value } }))} className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/30 text-sm font-bold outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition" />
+                        </div>
+                        <div>
+                           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Tentative duration of stay (days)</label>
+                           <input type="number" required value={foreignForm.treatment.stayDuration} onChange={e => setForeignForm(f => ({ ...f, treatment: { ...f.treatment, stayDuration: e.target.value } }))} className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/30 text-sm font-bold outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition" />
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* 3. Details of Attendants (Dynamic) */}
+                    {foreignForm.attendants.slice(0, attendantCount).map((_, idx) => (
+                      <section key={idx} className="relative">
+                        <div className="flex items-center justify-between mb-8 border-b border-slate-50 pb-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500"><Users size={20} /></div>
+                            <h3 className="text-xl font-black text-slate-800 tracking-tight">Details of Attendant {idx + 1}</h3>
+                          </div>
+                          {idx > 0 && (
+                            <button 
+                              type="button" 
+                              onClick={() => setAttendantCount(prev => prev - 1)}
+                              className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors flex items-center gap-1"
+                            >
+                              <X size={14} /> Remove
+                            </button>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          {['surname', 'givenName', 'gender', 'dob', 'nationality', 'passportNo', 'passportIssueDate', 'passportExpireDate', 'nidNo', 'relationship'].map(field => (
+                            <div key={field}>
+                               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">{field.replace(/([A-Z])/g, ' $1').trim()}</label>
+                               <input 
+                                 type={field.includes('Date') || field === 'dob' ? 'date' : 'text'}
+                                 value={foreignForm.attendants[idx][field] || ''}
+                                 onChange={e => {
+                                   const newAttendants = [...foreignForm.attendants];
+                                   newAttendants[idx][field] = e.target.value;
+                                   setForeignForm(f => ({ ...f, attendants: newAttendants }));
+                                 }}
+                                 className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/30 text-sm font-bold outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition"
+                                 placeholder={field === 'relationship' ? 'e.g. Spouse, Brother' : ''}
+                               />
+                            </div>
+                          ))}
+                          <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+                             {['addressNative', 'addressIndia'].map(field => (
+                               <div key={field}>
+                                 <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">{field.replace(/([A-Z])/g, ' $1').trim()}</label>
+                                 <textarea 
+                                   rows={2}
+                                   value={foreignForm.attendants[idx][field] || ''}
+                                   onChange={e => {
+                                      const newAttendants = [...foreignForm.attendants];
+                                      newAttendants[idx][field] = e.target.value;
+                                      setForeignForm(f => ({ ...f, attendants: newAttendants }));
+                                   }}
+                                   className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/30 text-sm font-bold outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition resize-none"
+                                 />
+                               </div>
+                             ))}
+                          </div>
+                          {['state', 'cityDistrict', 'pinCode', 'contactNative', 'contactIndia', 'email'].map(field => (
+                            <div key={field}>
+                               <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">{field.replace(/([A-Z])/g, ' $1').trim()}</label>
+                               <input 
+                                 type={field === 'email' ? 'email' : 'text'}
+                                 value={foreignForm.attendants[idx][field] || ''}
+                                 onChange={e => {
+                                     const newAttendants = [...foreignForm.attendants];
+                                     newAttendants[idx][field] = e.target.value;
+                                     setForeignForm(f => ({ ...f, attendants: newAttendants }));
+                                 }}
+                                 className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/30 text-sm font-bold outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition"
+                               />
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    ))}
+
+                    {attendantCount < 3 && (
+                      <button 
+                        type="button"
+                        onClick={() => setAttendantCount(prev => prev + 1)}
+                        className="w-full py-4 rounded-2xl border-2 border-dashed border-slate-200 text-slate-400 font-bold text-sm hover:border-primary-300 hover:text-primary-500 hover:bg-primary-50/30 transition-all flex items-center justify-center gap-2"
+                      >
+                        <Plus size={16} /> Add More Attendant
+                      </button>
+                    )}
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">{t.step4.preferredDate}</label>
-                    <input type="date" required value={form.date}
-                      onChange={e => setForm(v => ({ ...v, date: e.target.value }))}
-                      className="w-full px-4 py-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 text-sm outline-none focus:ring-2 focus:ring-primary-300 focus:bg-white transition" />
-                  </div>
+                </>
+              )}
 
-                </div>
-              </div>
-
-              <div className="flex justify-center">
+              <div className="flex justify-center mt-12">
                 <button type="submit"
-                  className="px-12 bg-primary-500 text-white py-4 rounded-2xl font-extrabold text-base hover:bg-primary-600 transition-all shadow-xl shadow-primary-500/25 flex items-center justify-center gap-3 group">
-                  {t.step4.button} <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                  className="px-16 bg-primary-500 text-white py-5 rounded-2xl font-black text-lg hover:bg-primary-600 transition-all shadow-2xl shadow-primary-500/25 flex items-center justify-center gap-4 group active:scale-95">
+                  {t.step4.button} <ArrowRight size={22} className="group-hover:translate-x-1.5 transition-transform" />
                 </button>
               </div>
             </form>
           </motion.div>
         )}
 
-        {/* ── Step 5: Pay ── */}
-        {step === 5 && (
+        {/* ── Step 3: Pay ── */}
+        {step === 3 && (
           <motion.div 
             key="s5" 
             initial={{ opacity: 0, y: 30 }} 
@@ -835,17 +868,16 @@ function BookAppointment({ onComplete, user, profile }) {
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-10">
                       <h3 className="text-xl font-bold text-slate-900">Appointment Details</h3>
-                      <button onClick={() => setStep(4)} className="text-xs font-bold text-primary-500 hover:text-primary-700 transition-colors flex items-center gap-1">
+                      <button onClick={() => setStep(2)} className="text-xs font-bold text-primary-500 hover:text-primary-700 transition-colors flex items-center gap-1">
                         <Pencil size={12} /> Edit Details
                       </button>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                       {[
-                        { label: lang === 'bn' ? 'হাসপাতাল' : 'Hospital', value: selected.hospital?.name, icon: Building2, color: 'text-blue-500', bg: 'bg-blue-50' },
-                        { label: lang === 'bn' ? 'প্রধান উদ্বেগ' : 'Medical Concern', value: form.concern || 'General Consulting', icon: Activity, color: 'text-purple-500', bg: 'bg-purple-50' },
-                        { label: lang === 'bn' ? 'ডাক্তার' : 'Doctor', value: selected.doctor?.name, icon: UserCheck, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+                        { label: lang === 'bn' ? 'হাসপাতাল' : 'Hospital', value: selected.hospital?.branch_name, icon: Building2, color: 'text-blue-500', bg: 'bg-blue-50' },
                         { label: lang === 'bn' ? 'তারিখ' : 'Date', value: form.date, icon: CalendarPlus, color: 'text-orange-500', bg: 'bg-orange-50' },
+                        { label: lang === 'bn' ? 'প্রধান উদ্বেগ' : 'Medical Concern', value: billingType === 'domestic' ? form.concern : foreignForm.treatment.diagnosis, icon: Activity, color: 'text-purple-500', bg: 'bg-purple-50' },
                       ].map((item) => (
                         <div key={item.label} className="relative group/item">
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-2">{item.label}</p>
@@ -859,6 +891,26 @@ function BookAppointment({ onComplete, user, profile }) {
                       ))}
                     </div>
 
+                    {billingType === 'international' && (
+                      <div className="mt-10 p-6 bg-slate-50/50 rounded-[32px] border border-slate-100/50">
+                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Patient Information (International)</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                           <div>
+                             <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Passport No.</p>
+                             <p className="text-sm font-bold text-slate-700">{foreignForm.passportNo || 'N/A'}</p>
+                           </div>
+                           <div>
+                             <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Nationality</p>
+                             <p className="text-sm font-bold text-slate-700">{foreignForm.nationality || 'N/A'}</p>
+                           </div>
+                           <div>
+                             <p className="text-[9px] font-bold text-slate-400 uppercase mb-1">Attendants</p>
+                             <p className="text-sm font-bold text-slate-700">{attendantCount} Registered</p>
+                           </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="h-px bg-slate-100/60 my-10" />
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -868,7 +920,7 @@ function BookAppointment({ onComplete, user, profile }) {
                           <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 border border-slate-100 group-hover/contact:text-primary-500 group-hover/contact:border-primary-100 transition-colors">
                             <Globe size={14} />
                           </div>
-                          <span className="text-sm font-bold text-slate-700 truncate">{form.email || 'Email not provided'}</span>
+                          <span className="text-sm font-bold text-slate-700 truncate">{billingType === 'domestic' ? form.email : foreignForm.email || 'Email not provided'}</span>
                         </div>
                       </div>
                       <div>
@@ -877,7 +929,7 @@ function BookAppointment({ onComplete, user, profile }) {
                           <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-400 border border-slate-100 group-hover/contact:text-primary-500 group-hover/contact:border-primary-100 transition-colors">
                             <Phone size={14} />
                           </div>
-                          <span className="text-sm font-bold text-slate-700 truncate">{form.phone || 'Phone not provided'}</span>
+                          <span className="text-sm font-bold text-slate-700 truncate">{billingType === 'domestic' ? form.phone : foreignForm.contactNative || 'Phone not provided'}</span>
                         </div>
                       </div>
                     </div>

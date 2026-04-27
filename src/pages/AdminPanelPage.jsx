@@ -89,7 +89,7 @@ const AdminPanelPage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('bookings-pending');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [stats, setStats] = useState({ pending: 0, confirmed: 0, appointments: 0, doctors: 0, branches: 0 });
+  const [stats, setStats] = useState({ pending: 0, confirmed: 0, appointments: 0, branches: 0 });
   const [loading, setLoading] = useState(true);
 
   // Modal States
@@ -151,7 +151,6 @@ const AdminPanelPage = () => {
       const { count: pendingCount } = await supabase.from('appointments').select('*', { count: 'exact', head: true }).eq('booking_status', 'Pending');
       const { count: confirmedCount } = await supabase.from('appointments').select('*', { count: 'exact', head: true }).eq('booking_status', 'Confirmed');
       const { count: rejectedCount } = await supabase.from('appointments').select('*', { count: 'exact', head: true }).eq('booking_status', 'Rejected');
-      const { count: doctorCount } = await supabase.from('doctors').select('*', { count: 'exact', head: true });
       const { count: branchCount } = await supabase.from('branches').select('*', { count: 'exact', head: true });
       
       setStats({
@@ -159,7 +158,6 @@ const AdminPanelPage = () => {
         confirmed: confirmedCount || 0,
         rejected: rejectedCount || 0,
         appointments: (pendingCount || 0) + (confirmedCount || 0) + (rejectedCount || 0),
-        doctors: doctorCount || 0,
         branches: branchCount || 0
       });
     } catch (err) {
@@ -177,18 +175,6 @@ const AdminPanelPage = () => {
       } else if (activeTab === 'branches') {
         const { data } = await supabase.from('branches').select('*').order('created_at', { ascending: false });
         setBranches(data || []);
-      } else if (activeTab === 'specialists') {
-        const { data } = await supabase.from('specialties').select('*').order('name');
-        setSpecialties(data || []);
-      } else if (activeTab === 'doctors') {
-        const [docRes, brRes, specRes] = await Promise.all([
-          supabase.from('doctors').select('*, branches(branch_name)').order('doctor_name'),
-          supabase.from('branches').select('*').order('branch_name'),
-          supabase.from('specialties').select('*').order('name')
-        ]);
-        setDoctors(docRes.data || []);
-        setBranches(brRes.data || []);
-        setSpecialties(specRes.data || []);
       } else if (activeTab === 'admins') {
         const { data } = await supabase.from('users').select('*').eq('role', 'admin').order('created_at', { ascending: false });
         setAdmins(data || []);
@@ -383,7 +369,7 @@ const AdminPanelPage = () => {
             <div className="p-6 md:p-8 border-b border-slate-50 flex items-start justify-between bg-slate-50/50">
               <div>
                 <h2 className="text-xl font-black text-slate-900 mb-1.5">
-                  {editingItem ? 'Edit' : 'Add New'} {modalType === 'branch' ? 'Branch' : modalType === 'specialty' ? 'Specialty' : 'Doctor'}
+                  {editingItem ? 'Edit' : 'Add New'} {modalType === 'branch' ? 'Branch' : 'Admin'}
                 </h2>
                 <p className="text-xs text-slate-400 font-bold">Please fill in all required information below.</p>
               </div>
@@ -498,184 +484,7 @@ const AdminPanelPage = () => {
                 </>
               )}
 
-              {modalType === 'specialty' && (
-                <>
-                  <div className="space-y-2 mb-4">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Specialty Image</label>
-                    <div 
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full h-36 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50 hover:bg-slate-100/80 hover:border-primary-300 hover:shadow-inner transition-all flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group"
-                    >
-                       {(imageFile || formData.image_url) ? (
-                         <>
-                           <img 
-                             src={imageFile ? URL.createObjectURL(imageFile) : formData.image_url} 
-                             alt="Preview" 
-                             className="absolute inset-0 w-full h-full object-cover group-hover:blur-sm transition-all duration-300"
-                           />
-                           <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/30 transition-colors duration-300" />
-                           <div className="relative z-10 flex flex-col items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-4 group-hover:translate-y-0">
-                             <div className="bg-white text-primary-500 p-2.5 rounded-xl shadow-xl">
-                                <RefreshCw size={18} />
-                             </div>
-                             <span className="text-[10px] font-black bg-slate-900/80 px-3 py-1 rounded-lg backdrop-blur shadow-sm text-white tracking-widest uppercase">Change Image</span>
-                           </div>
-                         </>
-                       ) : (
-                         <div className="flex flex-col items-center text-slate-400 group-hover:text-primary-500 transition-colors gap-3 scale-95 group-hover:scale-100 duration-300">
-                           <div className="bg-white p-3.5 rounded-2xl shadow-sm group-hover:shadow-md transition-shadow">
-                             <CloudUpload size={28} />
-                           </div>
-                           <span className="text-xs font-bold tracking-wide">Click to browse files</span>
-                         </div>
-                       )}
-                    </div>
-                    
-                    <input 
-                      ref={fileInputRef}
-                      type="file" 
-                      accept="image/*"
-                      className="hidden"
-                      required={!editingItem && !formData.image_url}
-                      onChange={(e) => setImageFile(e.target.files[0])}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Specialists Name</label>
-                    <input required value={formData.name || ''} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary-100 transition" placeholder="e.g. Cardiology" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subtitle</label>
-                    <input required value={formData.subtitle || ''} onChange={e => setFormData({...formData, subtitle: e.target.value})} className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary-100 transition" placeholder="e.g. Heart Care" />
-                  </div>
-                </>
-              )}
 
-              {modalType === 'doctor' && (
-                <>
-                  <div className="space-y-2 mb-4">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Doctor Profile Image</label>
-                    <div 
-                      onClick={() => fileInputRef.current?.click()}
-                      className="w-full h-36 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50 hover:bg-slate-100/80 hover:border-primary-300 hover:shadow-inner transition-all flex flex-col items-center justify-center cursor-pointer relative overflow-hidden group"
-                    >
-                       {(imageFile || formData.image_url) ? (
-                         <>
-                           <img 
-                             src={imageFile ? URL.createObjectURL(imageFile) : formData.image_url} 
-                             alt="Preview" 
-                             className="absolute inset-0 w-full h-full object-cover group-hover:blur-sm transition-all duration-300"
-                           />
-                           <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/30 transition-colors duration-300" />
-                           <div className="relative z-10 flex flex-col items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-y-4 group-hover:translate-y-0">
-                             <div className="bg-white text-primary-500 p-2.5 rounded-xl shadow-xl">
-                                <RefreshCw size={18} />
-                             </div>
-                             <span className="text-[10px] font-black bg-slate-900/80 px-3 py-1 rounded-lg backdrop-blur shadow-sm text-white tracking-widest uppercase">Change Image</span>
-                           </div>
-                         </>
-                       ) : (
-                         <div className="flex flex-col items-center text-slate-400 group-hover:text-primary-500 transition-colors gap-3 scale-95 group-hover:scale-100 duration-300">
-                           <div className="bg-white p-3.5 rounded-2xl shadow-sm group-hover:shadow-md transition-shadow">
-                             <CloudUpload size={28} />
-                           </div>
-                           <span className="text-xs font-bold tracking-wide">Click to browse files</span>
-                         </div>
-                       )}
-                    </div>
-                    
-                    <input 
-                      ref={fileInputRef}
-                      type="file" 
-                      accept="image/*"
-                      className="hidden"
-                      required={!editingItem && !formData.image_url}
-                      onChange={(e) => setImageFile(e.target.files[0])}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Full Name</label>
-                    <input required value={formData.doctor_name || ''} onChange={e => setFormData({...formData, doctor_name: e.target.value})} className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-primary-100 transition" placeholder="Dr. John Doe" />
-                  </div>
-
-                  <div className="space-y-6 pt-2">
-                    {/* Specialization Selection */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between px-1">
-                        <div className="flex items-center gap-2">
-                          <Stethoscope size={14} className="text-primary-500" />
-                          <label className="text-[11px] font-black text-slate-700 uppercase tracking-[0.15em]">Specializations</label>
-                        </div>
-                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md uppercase tracking-tighter">
-                          {(formData.specialization || '').split(',').filter(Boolean).length} Selected
-                        </span>
-                      </div>
-                      <div className="p-3 bg-slate-50/50 border border-slate-100 rounded-[24px] max-h-[160px] overflow-y-auto custom-scrollbar flex flex-wrap gap-2">
-                        {specialties.map(s => {
-                          const currentSpecs = (formData.specialization || '').split(',').map(x => x.trim()).filter(Boolean);
-                          const isSelected = currentSpecs.includes(s.name);
-                          return (
-                            <button
-                              key={s.id}
-                              type="button"
-                              onClick={() => {
-                                let newSpecs = isSelected ? currentSpecs.filter(x => x !== s.name) : [...currentSpecs, s.name];
-                                setFormData({ ...formData, specialization: newSpecs.join(', ') });
-                              }}
-                              className={`px-3.5 py-2 rounded-xl text-[11px] font-bold transition-all duration-300 flex items-center gap-2 border shadow-sm
-                                ${isSelected 
-                                  ? 'bg-primary-500 border-primary-400 text-white shadow-primary-500/20 scale-[1.03]' 
-                                  : 'bg-white border-slate-200 text-slate-500 hover:border-primary-300 hover:bg-primary-50/30'}`}
-                            >
-                              <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-slate-200'}`} />
-                              {s.name}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Branch Selection */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between px-1">
-                        <div className="flex items-center gap-2">
-                          <Building2 size={14} className="text-secondary-500" />
-                          <label className="text-[11px] font-black text-slate-700 uppercase tracking-[0.15em]">Assigned Branches</label>
-                        </div>
-                        <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md uppercase tracking-tighter">
-                          {Array.isArray(formData.branch_ids) ? formData.branch_ids.length : (formData.branch_id ? 1 : 0)} Selected
-                        </span>
-                      </div>
-                      <div className="p-3 bg-slate-50/50 border border-slate-100 rounded-[24px] max-h-[160px] overflow-y-auto custom-scrollbar flex flex-wrap gap-2">
-                        {branches.map(b => {
-                          const currentBranches = Array.isArray(formData.branch_ids) ? formData.branch_ids : (formData.branch_id ? [formData.branch_id] : []);
-                          const isSelected = currentBranches.includes(b.id);
-                          return (
-                            <button
-                              key={b.id}
-                              type="button"
-                              onClick={() => {
-                                let newBranches = isSelected ? currentBranches.filter(id => id !== b.id) : [...currentBranches, b.id];
-                                setFormData({ ...formData, branch_ids: newBranches, branch_id: newBranches[0] || null });
-                              }}
-                              className={`px-3.5 py-2 rounded-xl text-[11px] font-bold transition-all duration-300 flex items-center gap-2 border shadow-sm
-                                ${isSelected 
-                                  ? 'bg-slate-800 border-slate-700 text-white shadow-slate-400/20 scale-[1.03]' 
-                                  : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 hover:bg-slate-50/50'}`}
-                            >
-                              <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-emerald-400' : 'bg-slate-200'}`} />
-                              {b.branch_name}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-
-                </>
-              )}
 
               <div className="flex gap-3 pt-6 border-t border-slate-50">
                 <button 
@@ -755,8 +564,6 @@ const AdminPanelPage = () => {
               </div>
 
               <TabButton active={activeTab === 'branches'} icon={Building2} label="Branches" onClick={() => {setActiveTab('branches'); setIsSidebarOpen(false);}} />
-              <TabButton active={activeTab === 'specialists'} icon={Stethoscope} label="Specialists" onClick={() => {setActiveTab('specialists'); setIsSidebarOpen(false);}} />
-              <TabButton active={activeTab === 'doctors'} icon={Users} label="Doctors" onClick={() => {setActiveTab('doctors'); setIsSidebarOpen(false);}} />
 
               <div className="my-6 h-px bg-slate-50/50" />
               <div className="px-4 py-3">
@@ -841,13 +648,7 @@ const AdminPanelPage = () => {
                <h3 className="text-3xl font-black text-slate-900">{stats.rejected} <span className="text-xs font-bold text-slate-300 uppercase tracking-tight ml-1">Total</span></h3>
             </div>
 
-            <div className="flex-shrink-0 w-[200px] p-6 bg-white rounded-[32px] border border-slate-100 shadow-sm">
-               <div className="w-10 h-10 rounded-2xl bg-primary-50 flex items-center justify-center mb-4 text-primary-500">
-                 <Users size={20} />
-               </div>
-               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Active Doctors</p>
-               <h3 className="text-3xl font-black text-slate-900">{doctors.filter(d => d.is_active).length} <span className="text-xs font-bold text-slate-300 uppercase tracking-tight ml-1">Online</span></h3>
-            </div>
+
           </div>
 
           {/* Desktop Metrics Overview - Elegant Grid for Professional Management */}
@@ -877,13 +678,7 @@ const AdminPanelPage = () => {
                <h3 className="text-4xl font-black text-slate-900">{stats.rejected} <span className="text-xs font-bold text-slate-300 uppercase tracking-tight ml-1">Total</span></h3>
             </div>
 
-            <div className="p-8 bg-white rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 group">
-               <div className="w-12 h-12 rounded-2xl bg-primary-50 flex items-center justify-center mb-6 text-primary-500 group-hover:bg-primary-500 group-hover:text-white transition-all duration-500">
-                 <Users size={22} />
-               </div>
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Active Doctors</p>
-               <h3 className="text-4xl font-black text-slate-900">{doctors.filter(d => d.is_active).length} <span className="text-xs font-bold text-slate-300 uppercase tracking-tight ml-1">Online</span></h3>
-            </div>
+
           </div>
 
           <AnimatePresence mode="wait">
@@ -1003,10 +798,6 @@ const AdminPanelPage = () => {
                                             <div className="flex flex-col">
                                               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Selected Branch</span>
                                               <span className="text-xs font-bold text-slate-700">{apt.branches?.branch_name || 'Main Center'}</span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Selected Specialist</span>
-                                              <span className="text-xs font-bold text-slate-700">{apt.doctors?.doctor_name || 'Generic Specialist'}</span>
                                             </div>
                                           </div>
                                         </div>
@@ -1199,15 +990,10 @@ const AdminPanelPage = () => {
                                         <p className="text-xs font-black text-slate-800">{apt.branches?.branch_name || 'Main Center'}</p>
                                       </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600 shadow-sm">
-                                        <Stethoscope size={18} />
-                                      </div>
                                       <div>
-                                        <p className="text-[9px] font-bold text-slate-400 uppercase">Selected Doctor</p>
-                                        <p className="text-xs font-black text-slate-800">{apt.doctors?.doctor_name || 'Specialist Group'}</p>
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase">Selected Branch</p>
+                                        <p className="text-xs font-black text-slate-800">{apt.branches?.branch_name || 'Main Center'}</p>
                                       </div>
-                                    </div>
                                   </div>
 
                                   {/* Section 4: Payment & Concern (Premium Dark Mode Style) */}
@@ -1374,249 +1160,7 @@ const AdminPanelPage = () => {
               </motion.div>
             )}
 
-            {/* ── Specialists Section ── */}
-            {activeTab === 'specialists' && (
-              <motion.div key="specialists" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                <SectionHeader 
-                  title="Medical Specialties" 
-                  desc="Configure medical departments and clinical categories." 
-                  action={<button onClick={() => {setEditingItem(null); setFormData({}); setModalType('specialty'); setShowModal(true);}} className="flex items-center gap-2 px-6 py-3 bg-primary-500 text-white rounded-2xl text-sm font-black shadow-lg shadow-primary-500/30 hover:bg-primary-600 transition-all"><Plus size={18} /> New Specialty</button>}
-                />
 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {loading ? (
-                    [1, 2, 3, 4].map(i => <div key={i} className="h-48 bg-slate-100 animate-pulse rounded-[32px]" />)
-                  ) : (
-                    specialties.map(sp => {
-                      let finalIconName = sp.icon_name;
-                      let finalColor = sp.color;
-                      
-                      if (!finalIconName || !finalColor) {
-                        const name = (sp.name || '').toLowerCase();
-                        const mapping = [
-                          { keywords: ['cardio', 'heart'], icon: 'Heart', color: '#ef4444' },
-                          { keywords: ['neuro', 'brain', 'nerve'], icon: 'Brain', color: '#8b5cf6' },
-                          { keywords: ['ortho', 'bone', 'joint'], icon: 'Bone', color: '#f97316' },
-                          { keywords: ['derm', 'skin', 'beauty'], icon: 'Sparkles', color: '#ec4899' },
-                          { keywords: ['pedia', 'child', 'baby'], icon: 'Baby', color: '#10b981' },
-                          { keywords: ['eye', 'ophth', 'vision'], icon: 'Eye', color: '#06b6d4' },
-                          { keywords: ['dent', 'teeth', 'smile', 'oral'], icon: 'Smile', color: '#3b82f6' },
-                          { keywords: ['phar', 'medicine', 'drug'], icon: 'Pill', color: '#14b8a6' },
-                          { keywords: ['surg', 'operat'], icon: 'Scissors', color: '#f43f5e' },
-                          { keywords: ['urol', 'kidney', 'nephro', 'fluid'], icon: 'Droplets', color: '#3b82f6' },
-                          { keywords: ['general', 'checkup', 'wellness'], icon: 'ShieldCheck', color: '#6366f1' },
-                          { keywords: ['gast', 'stomach', 'digest'], icon: 'Activity', color: '#f59e0b' },
-                          { keywords: ['patho', 'lab', 'blood', 'dna'], icon: 'Dna', color: '#ef4444' },
-                          { keywords: ['emergency', 'trauma'], icon: 'Hospital', color: '#dc2626' },
-                          { keywords: ['fever', 'infect'], icon: 'Thermometer', color: '#f97316' },
-                          { keywords: ['wound', 'burn'], icon: 'Bandage', color: '#f59e0b' }
-                        ];
-
-                        const matched = mapping.find(m => m.keywords.some(k => name.includes(k)));
-                        
-                        if (matched) {
-                          if (!finalIconName) finalIconName = matched.icon;
-                          if (!finalColor) finalColor = matched.color;
-                        } else {
-                          const fallbacks = ['BriefcaseMedical', 'Stethoscope', 'Microscope', 'Syringe', 'Waves'];
-                          const colors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#6366f1'];
-                          let hash = 0;
-                          for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-                          hash = Math.abs(hash);
-                          if (!finalIconName) finalIconName = fallbacks[hash % fallbacks.length];
-                          if (!finalColor) finalColor = colors[hash % colors.length];
-                        }
-                      }
-                      
-                      const IconComponent = Icons[finalIconName] || Icons.Activity;
-
-                      return (
-                        <div key={sp.id} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex flex-col items-center text-center group">
-                          <div className="w-16 h-16 rounded-3xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 duration-500 overflow-hidden"
-                            style={!sp.image_url ? { backgroundColor: finalColor + '15', color: finalColor } : {}}>
-                            {sp.image_url ? (
-                              <img src={sp.image_url} alt={sp.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                            ) : (
-                              <IconComponent size={28} strokeWidth={2} />
-                            )}
-                          </div>
-                          <h3 className="font-extrabold text-slate-900 text-sm mb-1">{sp.name}</h3>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-6">{sp.subtitle}</p>
-                          
-                          <div className="flex items-center gap-3 w-full pt-4 border-t border-slate-50">
-                            <button 
-                              onClick={() => toggleActiveness('specialties', sp.id, sp.is_active)}
-                              className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg text-[9px] font-black uppercase transition-all
-                                ${sp.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                              {sp.is_active ? 'Active' : 'Hidden'}
-                            </button>
-                            <button onClick={() => openEditModal('specialty', sp)} className="p-2 text-slate-300 hover:text-primary-500 transition-colors"><Pencil size={14} /></button>
-                            <button onClick={() => deleteItem('specialties', sp.id)} className="p-2 text-slate-300 hover:text-rose-500 transition-colors"><Trash2 size={14} /></button>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </motion.div>
-            )}
-
-            {/* ── Doctors Section ── */}
-            {activeTab === 'doctors' && (
-              <motion.div key="doctors" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                <SectionHeader 
-                  title="Clinical Staff" 
-                  desc="Directory of all registered doctors and medical personnel." 
-                  action={<button onClick={() => {setEditingItem(null); setFormData({}); setModalType('doctor'); setShowModal(true);}} className="flex items-center gap-2 px-6 py-3 bg-primary-500 text-white rounded-2xl text-sm font-black shadow-lg shadow-primary-500/30 hover:bg-primary-600 transition-all"><Plus size={18} /> Add Doctor</button>}
-                />
-
-                <div className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
-                  {/* Mobile Doctor Cards (Premium Redesign) */}
-                  <div className="md:hidden space-y-6 px-4 pb-20">
-                    {loading ? (
-                      [1, 2].map(i => <div key={i} className="h-64 bg-slate-50 animate-pulse rounded-[40px]" />)
-                    ) : (
-                      doctors.map(doc => (
-                        <div key={doc.id} className="bg-white rounded-[40px] border border-slate-100 shadow-sm overflow-hidden flex flex-col group">
-                          <div className="h-48 relative">
-                             <img src={doc.image_url} alt={doc.doctor_name} className="w-full h-full object-cover" />
-                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
-                             <div className="absolute bottom-4 left-6">
-                                <h3 className="text-xl font-black text-white leading-tight">{doc.doctor_name}</h3>
-                                <p className="text-[10px] font-bold text-white/70 uppercase tracking-widest">{doc.qualification}</p>
-                             </div>
-                             <div className="absolute top-4 right-4 animate-float">
-                                <div className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg ${doc.is_active ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>
-                                  {doc.is_active ? 'Active' : 'Offline'}
-                                </div>
-                             </div>
-                          </div>
-                          
-                          <div className="p-6 space-y-4">
-                            <div>
-                              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Specializations</p>
-                              <div className="flex flex-wrap gap-2">
-                                {(doc.specialization || '').split(',').map((s, i) => (
-                                  <span key={i} className="px-3 py-1 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-bold border border-slate-100">{s.trim()}</span>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            <div className="pt-2">
-                               <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Assigned Venues</p>
-                               <div className="space-y-2">
-                                  {doc.branch_ids && Array.isArray(doc.branch_ids) && doc.branch_ids.length > 0 ? (
-                                    doc.branch_ids.map(id => {
-                                      const br = branches.find(b => b.id === id);
-                                      return (
-                                        <div key={id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100/50">
-                                          <div className="w-6 h-6 rounded-lg bg-white flex items-center justify-center text-primary-500 shadow-sm"><Building2 size={12} /></div>
-                                          <span className="text-[11px] font-bold text-slate-700">{br?.branch_name || 'Medical Center'}</span>
-                                        </div>
-                                      );
-                                    })
-                                  ) : (
-                                    <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-100/50 italic opacity-50 text-slate-400">
-                                       <AlertCircle size={14} />
-                                       <span className="text-[11px] font-bold">No branches assigned</span>
-                                    </div>
-                                  )}
-                               </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
-                               <button 
-                                 onClick={() => openEditModal('doctor', doc)}
-                                 className="flex-1 py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-lg shadow-slate-900/10"
-                               >
-                                 <Pencil size={14} /> Update Profile
-                               </button>
-                               <button 
-                                 onClick={() => toggleActiveness('doctors', doc.id, doc.is_active)}
-                                 className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${doc.is_active ? 'bg-emerald-50 text-emerald-500' : 'bg-rose-50 text-rose-500'} border border-current opacity-20 hover:opacity-100 active:scale-90`}
-                               >
-                                 {doc.is_active ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
-                               </button>
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-
-                  <div className="hidden md:block overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-slate-50/50">
-                          <th className="text-left px-8 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">Doctor</th>
-                          <th className="text-left px-8 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">Specialization</th>
-                          <th className="text-left px-8 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">Branch</th>
-                          <th className="text-right px-8 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-50">
-                        {loading ? (
-                          [1, 2, 3].map(i => <tr key={i}><td colSpan="5" className="px-8 py-5"><div className="h-10 bg-slate-50 animate-pulse rounded-xl" /></td></tr>)
-                        ) : (
-                          doctors.map(doc => (
-                            <tr key={doc.id} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="px-8 py-5 flex items-center gap-4">
-                                <img src={doc.image_url} alt={doc.doctor_name} className="w-10 h-10 rounded-xl object-cover ring-2 ring-slate-100" />
-                                <div>
-                                  <p className="font-extrabold text-slate-900 text-sm">{doc.doctor_name}</p>
-                                  <p className="text-[10px] text-slate-400 font-bold">{doc.qualification}</p>
-                                </div>
-                              </td>
-                              <td className="px-8 py-5">
-                                <span className="text-sm font-bold text-slate-700">
-                                  {(() => {
-                                    const specs = (doc.specialization || '').split(',').map(s => s.trim()).filter(Boolean);
-                                    if (specs.length <= 2) return doc.specialization;
-                                    return `${specs.slice(0, 2).join(', ')} +${specs.length - 2}`;
-                                  })()}
-                                </span>
-                              </td>
-                              <td className="px-8 py-5">
-                                <div className="flex flex-col gap-1.5 text-slate-500">
-                                  {doc.branch_ids && Array.isArray(doc.branch_ids) && doc.branch_ids.length > 0 ? (
-                                    doc.branch_ids.map(id => {
-                                      const br = branches.find(b => b.id === id);
-                                      return (
-                                        <div key={id} className="flex items-center gap-1.5">
-                                          <Building2 size={12} className="text-slate-300" />
-                                          <span className="text-[11px] font-bold text-slate-600 shrink-0">{br?.branch_name || 'Unknown'}</span>
-                                        </div>
-                                      );
-                                    })
-                                  ) : (
-                                    <div className="flex items-center gap-1.5">
-                                      <Building2 size={12} className="text-slate-300" />
-                                      <span className="text-xs font-bold text-slate-400 italic">{doc.branches?.branch_name || 'Not Assigned'}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-
-                              <td className="px-8 py-5 text-right">
-                                 <div className="flex items-center justify-end gap-2">
-                                   <button onClick={() => openEditModal('doctor', doc)} className="p-2 text-slate-300 hover:text-primary-500 transition-colors"><Pencil size={16} /></button>
-                                   <button 
-                                    onClick={() => toggleActiveness('doctors', doc.id, doc.is_active)}
-                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all shadow-sm
-                                      ${doc.is_active ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
-                                    {doc.is_active ? 'Active' : 'Unavailable'}
-                                  </button>
-                                 </div>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </motion.div>
-            )}
 
             {/* ── Admin List Section ── */}
             {activeTab === 'admins' && (
